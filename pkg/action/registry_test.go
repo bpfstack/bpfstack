@@ -2,13 +2,12 @@ package action
 
 import (
 	"testing"
-	"time"
 )
 
 func TestRegistry_Register(t *testing.T) {
 	registry := NewRegistry()
 
-	action := NewPrintAction("test_action", "Hello", 1*time.Second)
+	action := NewMockTestAction("test_action")
 	err := registry.Register(action)
 	if err != nil {
 		t.Fatalf("Failed to register action: %v", err)
@@ -27,8 +26,8 @@ func TestRegistry_Register(t *testing.T) {
 func TestRegistry_RegisterDuplicate(t *testing.T) {
 	registry := NewRegistry()
 
-	action1 := NewPrintAction("duplicate", "First", 1*time.Second)
-	action2 := NewPrintAction("duplicate", "Second", 1*time.Second)
+	action1 := NewMockTestAction("duplicate")
+	action2 := NewMockTestAction("duplicate")
 
 	if err := registry.Register(action1); err != nil {
 		t.Fatalf("Failed to register first action: %v", err)
@@ -50,7 +49,7 @@ func TestRegistry_Get(t *testing.T) {
 	}
 
 	// Register and get
-	action := NewPrintAction("my_action", "Test", 1*time.Second)
+	action := NewMockTestAction("my_action")
 	registry.Register(action)
 
 	retrieved, exists := registry.Get("my_action")
@@ -65,8 +64,8 @@ func TestRegistry_Get(t *testing.T) {
 func TestRegistry_GetAll(t *testing.T) {
 	registry := NewRegistry()
 
-	action1 := NewPrintAction("action1", "First", 1*time.Second)
-	action2 := NewPrintAction("action2", "Second", 1*time.Second)
+	action1 := NewMockTestAction("action1")
+	action2 := NewMockTestAction("action2")
 
 	registry.Register(action1)
 	registry.Register(action2)
@@ -87,8 +86,8 @@ func TestRegistry_GetAll(t *testing.T) {
 func TestRegistry_Names(t *testing.T) {
 	registry := NewRegistry()
 
-	action1 := NewPrintAction("alpha", "First", 1*time.Second)
-	action2 := NewPrintAction("beta", "Second", 1*time.Second)
+	action1 := NewMockTestAction("alpha")
+	action2 := NewMockTestAction("beta")
 
 	registry.Register(action1)
 	registry.Register(action2)

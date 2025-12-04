@@ -49,9 +49,6 @@ func main() {
 	// Create action registry and register actions
 	registry := action.NewRegistry()
 
-	// Register default actions
-	action.RegisterDefaultActions(registry)
-
 	// Register compute actions (cpu_metrics)
 	compute.RegisterActions(registry)
 

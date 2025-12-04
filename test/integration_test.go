@@ -442,7 +442,6 @@ func TestIntegration_WithDefaultActions(t *testing.T) {
 	initialConfig := `version: "1.0"
 actions:
   - cpu_metrics: true
-  - vmexit: false
 `
 	if err := os.WriteFile(configPath, []byte(initialConfig), 0644); err != nil {
 		t.Fatalf("Failed to create config: %v", err)
@@ -450,7 +449,6 @@ actions:
 
 	registry := action.NewRegistry()
 	compute.RegisterActions(registry)
-	action.RegisterDefaultActions(registry)
 
 	manager := action.NewManager(registry)
 	watcher, err := config.NewConfigWatcher(configPath)
@@ -469,25 +467,21 @@ actions:
 	if !manager.IsRunning("cpu_metrics") {
 		t.Error("cpu_metrics should be running")
 	}
-	if manager.IsRunning("vmexit") {
-		t.Error("vmexit should not be running")
-	}
 
-	// Enable all
-	allEnabledConfig := `version: "2.0"
+	// Disable cpu_metrics
+	disabledConfig := `version: "2.0"
 actions:
-  - cpu_metrics: true
-  - vmexit: true
+  - cpu_metrics: false
 `
-	if err := os.WriteFile(configPath, []byte(allEnabledConfig), 0644); err != nil {
+	if err := os.WriteFile(configPath, []byte(disabledConfig), 0644); err != nil {
 		t.Fatalf("Failed to update config: %v", err)
 	}
 
 	time.Sleep(500 * time.Millisecond)
 
 	running := manager.GetRunningActions()
-	if len(running) != 2 {
-		t.Errorf("Expected 2 running actions, got %d: %v", len(running), running)
+	if len(running) != 0 {
+		t.Errorf("Expected 0 running actions, got %d: %v", len(running), running)
 	}
 }
 
