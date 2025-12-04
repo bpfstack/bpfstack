@@ -1,0 +1,23 @@
+
+kind/test:
+  - changed-files:
+    - any-glob-to-any-file:
+      - test/**
+      - '**/*_test.go'
+
+kind/deps:
+  - changed-files:
+    - any-glob-to-any-file:
+      - go.mod
+      - go.sum
+
+kind/workflows:
+  - changed-files:
+    - any-glob-to-any-file:
+      - .github/**
+      - .golangci.yml
+
+kind/docs:
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'README.md'

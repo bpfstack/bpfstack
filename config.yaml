@@ -1,0 +1,7 @@
+version: "1.0"
+
+# Actions configuration
+# Set to true to enable, false to disable
+# Changes are applied in real-time!
+actions:
+  - cpu_metrics: true
