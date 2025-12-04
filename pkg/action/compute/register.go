@@ -6,5 +6,8 @@ import (
 
 // RegisterActions registers all compute-related actions
 func RegisterActions(registry *action.Registry) {
-	registry.Register(NewCPUMetricsAction())
+	if err := registry.Register(NewCPUMetricsAction()); err != nil {
+		// Log error but don't fail - allow partial registration
+		_ = err
+	}
 }

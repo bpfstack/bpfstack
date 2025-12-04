@@ -7,24 +7,24 @@ type CPUStats struct {
 	// Name of the CPU
 	Name string
 	// User time is the time spent executing user code
-	User   Nanoseconds
+	User Nanoseconds
 	// Nice time is the time spent servicing nice processes
-	Nice   Nanoseconds
+	Nice Nanoseconds
 	// System time is the time spent executing system code
 	System Nanoseconds
 	// Idle time is the time spent idle
-	Idle   Nanoseconds
+	Idle Nanoseconds
 	// IOWait time is the time spent waiting for I/O operations
 	IOWait Nanoseconds
 	// IRQ time is the time spent servicing hardware interrupts
-	IRQ    Nanoseconds
-	// SoftIRQ time is the time 
+	IRQ Nanoseconds
+	// SoftIRQ time is the time
 	// spent servicing software interrupts
 	SoftIRQ Nanoseconds
 	// Steal time is the time spent stealing CPU time
-	// The hypervisor may steal CPU time 
+	// The hypervisor may steal CPU time
 	// from the guest OS to run other tasks
-	Steal  Nanoseconds
+	Steal Nanoseconds
 }
 
 // Total returns the total time spent executing code on the CPU.

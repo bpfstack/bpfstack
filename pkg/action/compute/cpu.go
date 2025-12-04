@@ -16,10 +16,10 @@ import (
 // CPUMetricsAction collects CPU metrics
 type CPUMetricsAction struct {
 	*action.BaseAction
-	stopCh      chan struct{}
-	wg          sync.WaitGroup
-	prevStats   *CPUStats
-	statsMutex  sync.Mutex
+	stopCh     chan struct{}
+	wg         sync.WaitGroup
+	prevStats  *CPUStats
+	statsMutex sync.Mutex
 }
 
 // NewCPUMetricsAction creates a new CPU metrics action
@@ -88,7 +88,7 @@ func (c *CPUMetricsAction) collectCPUMetrics() {
 
 	// Calculate CPU usage based on the difference
 	usage := calculateCPUUsage(prevStats, stats)
-	
+
 	c.LogInfo("collected CPU metrics", logger.Fields{
 		"cpu_usage": fmt.Sprintf("%.2f%%", usage),
 	})
@@ -167,7 +167,7 @@ func parseUint64(s string) (Nanoseconds, error) {
 func calculateCPUUsage(prev, curr *CPUStats) float64 {
 	prevTotal := prev.Total()
 	currTotal := curr.Total()
-	
+
 	prevActive := prev.Active()
 	currActive := curr.Active()
 
@@ -182,4 +182,3 @@ func calculateCPUUsage(prev, curr *CPUStats) float64 {
 	// CPU usage is the percentage of active time over total time
 	return float64(activeDiff) / float64(totalDiff) * 100.0
 }
-
