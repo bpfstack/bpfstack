@@ -1,23 +1,28 @@
 
-kind/test:
+area/test:
   - changed-files:
     - any-glob-to-any-file:
       - test/**
       - '**/*_test.go'
 
-kind/deps:
+area/deps:
   - changed-files:
     - any-glob-to-any-file:
       - go.mod
       - go.sum
 
-kind/workflows:
+area/workflows:
   - changed-files:
     - any-glob-to-any-file:
       - .github/**
       - .golangci.yml
 
-kind/docs:
+area/docs:
   - changed-files:
     - any-glob-to-any-file:
       - 'README.md'
+
+area/compute-action:
+  - changed-files:
+    - any-glob-to-any-file:
+      - pkg/action/compute/**
