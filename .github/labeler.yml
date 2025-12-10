@@ -1,21 +1,24 @@
 area/agent:
-- change-files:
-  - any-glob-to-any-file:
+- any:
+  - changed-files:
     - cmd/agent/**
     - pkg/agent/**
 
 area/ci:
-- change-files:
+- any:
+  - changed-files:
   - any-glob-to-any-file:
     - .github/**
 
 area/test:
-- change-files:
+- any:
+  - changed-files:
   - any-glob-to-any-file:
     - test/**
     - '**/*_test.go'
 
 area/probe:
-- change-files:
+- any:
+  - changed-files:
   - any-glob-to-any-file:
     - pkg/probes/**
