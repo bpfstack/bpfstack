@@ -13,7 +13,7 @@ area/test:
 - change-files:
   - any-glob-to-any-file:
     - test/**
-    - **/*_test.go
+    - '**/*_test.go'
 
 area/probe:
 - change-files:
