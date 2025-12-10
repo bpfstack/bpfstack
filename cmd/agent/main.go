@@ -13,36 +13,56 @@ import (
 )
 
 func main() {
-    dataChan := make(chan core.TelemetryEvent)
-    probeMgr := core.NewProbeManager(dataChan)
+    if err := run(); err != nil {
+        fmt.Printf("Error: %v", err)
+        os.Exit(1)
+    }
+}
+func run() error {
+    // if sigint(ctrl+c) or sigterm(kill) is received,
+    // the context is done and the program should exit.
+    ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+    defer stop()
 
-    // Just register the ProbeFactoryFunc to the probe manager.
-    // If the probe is true in the config,
-    // the probe initialized and started.
+    dataChan := make(chan core.TelemetryEvent, 100) 
+    errChan := make(chan error, 100)
+    
+    fmt.Println("Starting the probe manager")
+    probeMgr := core.NewProbeManager(dataChan, errChan)
     probeMgr.Register("helloworld", helloworld.New)
     probeMgr.Register("file_open", file_open.New)
-    
-    // TODO: Convert to YAML config file
-    currentConfig := map[string]bool{
-		"file_open":   true,
-		"helloworld": true,
-	}
-    
-	ctx, cancel := context.WithCancel(context.Background())
-	probeMgr.Reconcile(ctx, currentConfig)
 
-    // consume and print telemetry events
-    // TODO: Convert to output format object 
+    currentConfig := map[string]bool{
+        "file_open":   true,
+        "helloworld": true,
+    }
+
+    // receive the data in a separate goroutine.
+    // if an error occurs during reconcile,
+    // the error is sent to the errChan.
     go func() {
-        for event := range dataChan {
-            fmt.Printf("[%s] %s\n", event.ProbeName, event.Data)
+        for {
+            select {
+            case event := <-dataChan:
+                fmt.Printf("[%s] %s\n", event.ProbeName, event.Data) 
+            case err := <-errChan:
+                fmt.Printf("Error: %v\n", err)
+            case <-ctx.Done():
+                return
+            }
         }
     }()
 
-    // Wait for the context to be done
-    sigChan := make(chan os.Signal, 1)
-    signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
-	<-sigChan
-	
-	cancel()
+    // reconcile the probes
+    probeMgr.Reconcile(ctx, currentConfig)
+    
+    fmt.Println("Agent started") 
+
+    // wait for the context to be done
+    <-ctx.Done()
+    
+    fmt.Println("Shutting down the agent")
+    probeMgr.Shutdown()
+    
+    return nil
 }

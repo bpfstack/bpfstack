@@ -22,7 +22,7 @@ func (p *HelloWorldProbe) Load() error {
 }
 
 func (p *HelloWorldProbe) Run(ctx context.Context, outCh chan<- core.TelemetryEvent) error {
-	ticker := time.NewTicker(30 * time.Second)
+	ticker := time.NewTicker(10 * time.Second)
 	for {
 		select {
 		case <-ctx.Done():
