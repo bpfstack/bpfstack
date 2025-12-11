@@ -34,10 +34,10 @@ jobs:
 
       # Run golangci-lint.
       - name: golangci-lint
-        uses: golangci/golangci-lint-action@v7
+        uses: golangci/golangci-lint-action@v6
         with:
           # Use latest v2 version which supports Go 1.25
-          version: latest
+          version: v1.64
           # Arguments to use when running the lint.
           # --timeout=5m: Set timeout
           args: --timeout=5m
