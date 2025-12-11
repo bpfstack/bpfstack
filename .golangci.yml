@@ -1,16 +1,17 @@
-version: "2"
-
 run:
   timeout: 5m
   tests: true
-  skip-dirs:
-    - bin
-    - headers
-  skip-files:
-    - ".*\\.pb\\.go$"
-    - ".*_bpfel\\.go$"
-    - ".*_bpfeb\\.go$"
-    - ".*\\.o$"
+  go: "1.24"
+
+linters:
+  disable-all: true
+  enable:
+    - errcheck      # Avoid ignoring errors
+    - govet         # Go official analysis tool
+    - staticcheck   # Static analysis
+    - unused        # Unused code
+    - ineffassign   # Inefficient assignments
+    - revive        # Code style and smell
 
 linters-settings:
   errcheck:
@@ -18,20 +19,20 @@ linters-settings:
     check-blank: true
   
   govet:
-    check-shadowing: true
-    enable-all: true
-
-linters:
-  disable-all: true
-  enable:
-    - errcheck # check for unchecked errors
-    - govet # check for common mistakes
-    - staticcheck # check for static errors
-    - unused # check for unused variables
-    - ineffassign # check for inefficient assignments
-    - revive # check for code smells
+    enable:
+      - shadow
 
 issues:
+  exclude-dirs:
+    - bin
+    - headers
+
+  exclude-files:
+    - ".*\\.pb\\.go$"
+    - ".*_bpfel\\.go$"
+    - ".*_bpfeb\\.go$"
+    - ".*\\.o$"
+
   exclude-rules:    
     - path: _test\.go
       linters:

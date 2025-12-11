@@ -1,6 +1,6 @@
 module github.com/bpfstack/bpfstack
 
-go 1.25.5
+go 1.24.11
 
 require (
 	github.com/cilium/ebpf v0.20.0 // indirect
