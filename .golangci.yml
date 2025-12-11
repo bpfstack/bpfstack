@@ -1,19 +1,43 @@
-version: "2"
-
 run:
   timeout: 5m
   tests: true
+  go: "1.25"
 
 linters:
+  disable-all: true
   enable:
-    - errcheck
-    - govet
-    - staticcheck
-    - unused
-    - ineffassign
-    - revive
-    - shadow
+    - errcheck      # Avoid ignoring errors
+    - govet         # Go official analysis tool
+    - staticcheck   # Static analysis
+    - unused        # Unused code
+    - ineffassign   # Inefficient assignments
+    - revive        # Code style and smell
 
-output:
-  formats:
-    - format: colored-line-number
+linters-settings:
+  errcheck:
+    check-type-assertions: true
+    check-blank: true
+  
+  govet:
+    enable:
+      - shadow
+
+issues:
+  exclude-dirs:
+    - bin
+    - headers
+
+  exclude-files:
+    - ".*\\.pb\\.go$"
+    - ".*_bpfel\\.go$"
+    - ".*_bpfeb\\.go$"
+    - ".*\\.o$"
+
+  exclude-rules:    
+    - path: _test\.go
+      linters:
+        - errcheck
+        - unused
+  
+  max-issues-per-linter: 0
+  max-same-issues: 0
