@@ -36,11 +36,11 @@ jobs:
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v7
         with:
-          # Use v1.64.8 which is stable and supports Go 1.25
-          version: v1.64.8
+          # Use latest v2 version which supports Go 1.25
+          version: latest
           # Arguments to use when running the lint.
-          # --out-format=colored-line-number: To make the log more readable.
-          args: --timeout=5m --out-format=colored-line-number
+          # --timeout=5m: Set timeout
+          args: --timeout=5m
 
           # Since CGO is required, the cache key must be exact.
           skip-cache: false
