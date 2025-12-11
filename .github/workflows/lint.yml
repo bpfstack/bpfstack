@@ -35,15 +35,10 @@ jobs:
       # Run golangci-lint.
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v6
-        with:
-          # Specify the version of the .golangci.yml file.
-          version: v1.61 
-          
+        with:          
           # Arguments to use when running the lint.
           # --out-format=colored-line-number: To make the log more readable.
           args: --timeout=5m --out-format=colored-line-number
 
           # Since CGO is required, the cache key must be exact.
           skip-cache: false
-          skip-pkg-cache: false
-          skip-build-cache: false
