@@ -1,7 +1,7 @@
 // Package fileopen is a probe that monitors file opens.
 package fileopen
 
-//go:generate sh -c "go run github.com/cilium/ebpf/cmd/bpf2go fileopen bpf.c -- -I${HEADER_DIR}"
+//go:generate sh -c "go run github.com/cilium/ebpf/cmd/bpf2go fileopen bpf.c -- -I../../../headers"
 
 import (
 	"bytes"
