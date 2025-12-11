@@ -30,7 +30,7 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y clang llvm libbpf-dev kernel-headers-$(uname -r) libssl-dev
+          sudo apt-get install -y clang llvm libbpf-dev libssl-dev
 
       # Run golangci-lint.
       - name: golangci-lint
