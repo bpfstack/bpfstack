@@ -35,7 +35,10 @@ jobs:
       - name: Generate eBPF Go files
         run: |
           go install github.com/cilium/ebpf/cmd/bpf2go@latest
-          bpftool btf dump file /sys/kernel/btf/vmlinux format c > pkg/probes/fileopen/vmlinux.h
+          
+          mkdir -p headers
+          bpftool btf dump file /sys/kernel/btf/vmlinux format c > headers/vmlinux.h
+          
           go generate ./...
         
       # Run golangci-lint.
