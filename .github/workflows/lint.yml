@@ -30,11 +30,12 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y clang llvm libbpf-dev libssl-dev
+          sudo apt-get install -y clang llvm libbpf-dev libssl-dev linux-tools-common linux-tools-generic
 
       - name: Generate eBPF Go files
         run: |
           go install github.com/cilium/ebpf/cmd/bpf2go@latest
+          bpftool btf dump file /sys/kernel/btf/vmlinux format c > pkg/probes/fileopen/vmlinux.h
           go generate ./...
         
       # Run golangci-lint.
