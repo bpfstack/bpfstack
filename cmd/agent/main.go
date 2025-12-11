@@ -1,3 +1,4 @@
+// Package main is the main package for the agent.
 package main
 
 import (
@@ -8,7 +9,7 @@ import (
 	"syscall"
 
 	"github.com/bpfstack/bpfstack/pkg/agent/core"
-	"github.com/bpfstack/bpfstack/pkg/probes/file_open"
+	fileopen "github.com/bpfstack/bpfstack/pkg/probes/fileopen"
 	"github.com/bpfstack/bpfstack/pkg/probes/helloworld"
 )
 
@@ -18,8 +19,10 @@ func main() {
         os.Exit(1)
     }
 }
+
+// run executes the agent logic.
 func run() error {
-    // if sigint(ctrl+c) or sigterm(kill) is received,
+    // If sigint(ctrl+c) or sigterm(kill) is received,
     // the context is done and the program should exit.
     ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
     defer stop()
@@ -30,15 +33,15 @@ func run() error {
     fmt.Println("Starting the probe manager")
     probeMgr := core.NewProbeManager(dataChan, errChan)
     probeMgr.Register("helloworld", helloworld.New)
-    probeMgr.Register("file_open", file_open.New)
+    probeMgr.Register("fileopen", fileopen.New)
 
     currentConfig := map[string]bool{
-        "file_open":   true,
+        "fileopen":   true,
         "helloworld": true,
     }
 
-    // receive the data in a separate goroutine.
-    // if an error occurs during reconcile,
+    // Receive the data in a separate goroutine.
+    // If an error occurs during reconcile,
     // the error is sent to the errChan.
     go func() {
         for {
@@ -53,12 +56,12 @@ func run() error {
         }
     }()
 
-    // reconcile the probes
+    // Reconcile the probes.
     probeMgr.Reconcile(ctx, currentConfig)
     
     fmt.Println("Agent started") 
 
-    // wait for the context to be done
+    // Wait for the context to be done.
     <-ctx.Done()
     
     fmt.Println("Shutting down the agent")

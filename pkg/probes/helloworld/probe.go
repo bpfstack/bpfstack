@@ -1,3 +1,4 @@
+// Package helloworld is a test implementation of the Prober interface.
 package helloworld
 
 import (
@@ -7,21 +8,27 @@ import (
 	"github.com/bpfstack/bpfstack/pkg/agent/core"
 )
 
-type HelloWorldProbe struct {}
+// Probe is a test implementation of the Prober interface.
+type Probe struct {}
 
-func New() core.Probe {
-    return &HelloWorldProbe{}
+// New is a test implementation of the New method.
+func New() core.Prober {
+    return &Probe{}
 }
 
-func (p *HelloWorldProbe) Name() string {
+// Name is a test implementation of the Name method.
+func (p *Probe) Name() string {
     return "helloworld"
 }
 
-func (p *HelloWorldProbe) Load() error {
+// Load is a test implementation of the Load method.
+func (p *Probe) Load() error {
     return nil
 }
 
-func (p *HelloWorldProbe) Run(ctx context.Context, outCh chan<- core.TelemetryEvent) error {
+// Run is a test implementation of the Run method.
+// It sends a "helloworld!!!" message with the current time every 10 seconds.
+func (p *Probe) Run(ctx context.Context, outCh chan<- core.TelemetryEvent) error {
 	ticker := time.NewTicker(10 * time.Second)
 	for {
 		select {
@@ -37,6 +44,8 @@ func (p *HelloWorldProbe) Run(ctx context.Context, outCh chan<- core.TelemetryEv
 	}
 }
 
-func (p *HelloWorldProbe) Close() error {
+// Close is a test implementation of the Close method.
+// It does nothing.
+func (p *Probe) Close() error {
 	return nil
 }
