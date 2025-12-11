@@ -1,8 +1,14 @@
-version: "2"
-
 run:
   timeout: 5m
   tests: true
+  skip-dirs:
+    - bin
+    - headers
+  skip-files:
+    - ".*\\.pb\\.go$"
+    - ".*_bpfel\\.go$"
+    - ".*_bpfeb\\.go$"
+    - ".*\\.o$"
 
 linters-settings:
   errcheck:
@@ -16,25 +22,15 @@ linters-settings:
 linters:
   disable-all: true
   enable:
-    - errcheck # check for unchecked errors
-    - govet # check for common mistakes
-    - staticcheck # check for static errors
-    - unused # check for unused variables
-    - ineffassign # check for inefficient assignments
-    - revive # check for code smells
+    - errcheck
+    - govet
+    - staticcheck
+    - unused
+    - ineffassign
+    - revive
 
 issues:
-  exclude-dirs:
-    - bin
-    - headers
-  
-  exclude-files:
-    - ".*\\.pb\\.go$"
-    - ".*_bpfel\\.go$"
-    - ".*_bpfeb\\.go$"
-    - ".*\\.o$"
-  
-  exclude-rules:    
+  exclude-rules:
     - path: _test\.go
       linters:
         - errcheck
