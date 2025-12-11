@@ -34,8 +34,10 @@ jobs:
 
       # Run golangci-lint.
       - name: golangci-lint
-        uses: golangci/golangci-lint-action@v6
-        with:          
+        uses: golangci/golangci-lint-action@v7
+        with:
+          # Use the latest version of golangci-lint that supports Go 1.25
+          version: latest
           # Arguments to use when running the lint.
           # --out-format=colored-line-number: To make the log more readable.
           args: --timeout=5m --out-format=colored-line-number

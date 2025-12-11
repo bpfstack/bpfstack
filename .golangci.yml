@@ -3,14 +3,6 @@ version: "2"
 run:
   timeout: 5m
   tests: true
-  skip-dirs:
-    - bin
-    - headers
-  skip-files:
-    - ".*\\.pb\\.go$"
-    - ".*_bpfel\\.go$"
-    - ".*_bpfeb\\.go$"
-    - ".*\\.o$"
 
 linters-settings:
   errcheck:
@@ -18,8 +10,8 @@ linters-settings:
     check-blank: true
   
   govet:
-    check-shadowing: true
-    enable-all: true
+    enable:
+      - shadow
 
 linters:
   disable-all: true
@@ -32,6 +24,16 @@ linters:
     - revive # check for code smells
 
 issues:
+  exclude-dirs:
+    - bin
+    - headers
+  
+  exclude-files:
+    - ".*\\.pb\\.go$"
+    - ".*_bpfel\\.go$"
+    - ".*_bpfeb\\.go$"
+    - ".*\\.o$"
+  
   exclude-rules:    
     - path: _test\.go
       linters:
