@@ -11,7 +11,7 @@ permissions:
 
 jobs:
   golangci:
-    name: lint
+    name: lint and test
     runs-on: ubuntu-latest
     
     steps:
@@ -52,3 +52,6 @@ jobs:
 
           # Since CGO is required, the cache key must be exact.
           skip-cache: false
+      
+      - name: Run Unit Tests
+        run: go test -v ./...
