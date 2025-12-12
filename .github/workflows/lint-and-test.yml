@@ -54,4 +54,4 @@ jobs:
           skip-cache: false
       
       - name: Run Unit Tests
-        run: go test -v ./..
+        run: go test -v ./...
