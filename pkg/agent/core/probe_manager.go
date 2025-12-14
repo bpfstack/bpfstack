@@ -1,3 +1,4 @@
+// Package core contains the core logic for the agent.
 package core
 
 import (
@@ -7,7 +8,7 @@ import (
 )
 
 // ProbeFactoryFunc is the function type for the probe factory.
-type ProbeFactoryFunc func() Probe
+type ProbeFactoryFunc func() Prober
 
 // ProbeManager is the manager for the probes.
 type ProbeManager struct {
@@ -18,23 +19,25 @@ type ProbeManager struct {
     // registry is the collection of available probes.
     registry map[string]ProbeFactoryFunc
     // activeProbes is the collection of active probes.
-    activeProbes map[string]Probe
+    activeProbes map[string]Prober
     // mu is the mutex for the activeProbes map.
     // cancelFuncs is the collection of cancel functions for the probes.
     cancelFuncs map[string]context.CancelFunc
     mu sync.RWMutex
 }
 
+// NewProbeManager creates a new probe manager.
 func NewProbeManager(ch chan<- TelemetryEvent, errChan chan<- error) *ProbeManager {
 	return &ProbeManager{
 		dataChan:     ch,
 		errorChan:    errChan,
 		registry:     make(map[string]ProbeFactoryFunc),
-		activeProbes: make(map[string]Probe),
+		activeProbes: make(map[string]Prober),
 		cancelFuncs:  make(map[string]context.CancelFunc),
 	}
 }
 
+// Register registers a new probe.
 func (pm *ProbeManager) Register(name string, factory ProbeFactoryFunc) {
     // Lock the mutex to prevent race conditions.
     pm.mu.Lock()
@@ -128,6 +131,7 @@ func (pm *ProbeManager) stopProbe(name string)error{
     return nil
 }
 
+// Shutdown stops all the active probes and shuts down the probe manager.
 func (pm *ProbeManager) Shutdown() {
     pm.mu.Lock()
     defer pm.mu.Unlock()
@@ -136,6 +140,8 @@ func (pm *ProbeManager) Shutdown() {
     
     // Stop all the active probes.
     for name := range pm.activeProbes {
-        pm.stopProbe(name)
+        if err := pm.stopProbe(name); err != nil {
+            pm.errorChan <- FailedToStopProbe(name, err)
+        }
     }
 }

@@ -1,0 +1,58 @@
+name: golangci-lint
+
+on:
+  push:
+    branches: [ "main", "v*.*.*" ]
+  pull_request:
+    branches: [ "main", "v*.*.*" ]
+
+permissions:
+  contents: read
+
+jobs:
+  golangci:
+    name: lint and test
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'
+          cache: false
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang llvm libbpf-dev libssl-dev linux-tools-common linux-tools-generic
+      
+      - name: Setup bpftool
+        run: |
+          if [ ! -f /usr/sbin/bpftool ]; then
+            sudo ln -s /usr/lib/linux-tools/$(uname -r)/bpftool /usr/sbin/bpftool
+          fi
+
+      - name: Generate eBPF Go files
+        run: |
+          go install github.com/cilium/ebpf/cmd/bpf2go@latest
+          mkdir -p headers
+          # NOTE: Try to dump vmlinux.h (create an empty file 
+          # if it fails to prevent the linter from stopping).
+          bpftool btf dump file /sys/kernel/btf/vmlinux format c > headers/vmlinux.h || echo "// vmlinux.h generation failed" > headers/vmlinux.h
+          go generate ./...
+
+      # golangci-lint 실행
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v6
+        with:
+          version: v1.64
+          args: --timeout=5m --config=.golangci.yml --verbose
+        env:
+          # NOTE: eBPF project uses CGO, so it must be enabled for the linter to recognize the headers.
+          CGO_ENABLED: 1
+
+      - name: Run Unit Tests
+        env:
+          CGO_ENABLED: 1
+        run: go test -v ./...
