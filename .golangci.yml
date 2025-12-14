@@ -1,7 +1,23 @@
 run:
   timeout: 5m
   tests: true
-  go: "1.24"
+  skip-dirs:
+    - bin
+    - headers
+  skip-files:
+    - ".*\\.pb\\.go$"
+    - ".*_bpfel\\.go$"
+    - ".*_bpfeb\\.go$"
+    - ".*\\.o$"
+
+linters-settings:
+  errcheck:
+    check-type-assertions: true
+    check-blank: true
+  
+  govet:
+    enable:
+      - shadow
 
 linters:
   disable-all: true
@@ -13,25 +29,7 @@ linters:
     - ineffassign   # Inefficient assignments
     - revive        # Code style and smell
 
-linters-settings:
-  errcheck:
-    check-type-assertions: true
-    check-blank: true
-  
-  govet:
-    enable:
-      - shadow
-
 issues:
-  exclude-dirs:
-    - bin
-    - headers
-
-  exclude-files:
-    - ".*\\.pb\\.go$"
-    - ".*_bpfel\\.go$"
-    - ".*_bpfeb\\.go$"
-    - ".*\\.o$"
 
   exclude-rules:    
     - path: _test\.go
