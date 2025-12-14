@@ -9,12 +9,14 @@ import (
 	"github.com/bpfstack/bpfstack/pkg/agent/core"
 	"github.com/bpfstack/bpfstack/pkg/probes/fileopen"
 	"github.com/bpfstack/bpfstack/pkg/probes/helloworld"
+	"github.com/bpfstack/bpfstack/pkg/probes/iowait"
 )
 
 func main() {
     factories := map[string]core.ProbeFactoryFunc{
         "helloworld": helloworld.New,
         "fileopen": fileopen.New,
+        "iowait": iowait.New,
     }
 	if err := agent.Run(factories); err != nil {
 		fmt.Printf("Error: %v", err)
