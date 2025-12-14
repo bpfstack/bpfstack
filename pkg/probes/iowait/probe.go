@@ -117,7 +117,9 @@ func (p *Probe) collectAndSort() ([]ProcessStats, error) {
 		// IMPORTANT: Read data must be deleted to get new statistics for the next interval.
 		// If cumulative statistics are needed (forever increasing), do not delete it.
 		// Ignore deletion failures (e.g., race conditions where the entry is already gone)
-		_ = p.objs.ResultMap.Delete(key)
+		if err := p.objs.ResultMap.Delete(key); err != nil {
+			return nil, fmt.Errorf("deleting map entry: %w", err)
+		}
 	}
 
 	if err := iter.Err(); err != nil {
