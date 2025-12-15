@@ -12,136 +12,160 @@ type ProbeFactoryFunc func() Prober
 
 // ProbeManager is the manager for the probes.
 type ProbeManager struct {
-    // dataChan is the channel where the probe will send the telemetry events.
-    dataChan chan<- TelemetryEvent
-    // errorChan is the channel where the probe will send the errors.
-    errorChan chan<- error
-    // registry is the collection of available probes.
-    registry map[string]ProbeFactoryFunc
-    // activeProbes is the collection of active probes.
-    activeProbes map[string]Prober
-    // mu is the mutex for the activeProbes map.
-    // cancelFuncs is the collection of cancel functions for the probes.
-    cancelFuncs map[string]context.CancelFunc
-    mu sync.RWMutex
+	// dataChan is double-buffered channels for data
+	dataChan  chan TelemetryEvent
+    // errorChan is double-buffered channels for errors.
+	errorChan chan error
+	// registry is the collection of available probes.
+	registry map[string]ProbeFactoryFunc
+	// activeProbes is the collection of active probes.
+	activeProbes map[string]Prober
+	// cancelFuncs is the collection of cancel functions for the probes.
+	cancelFuncs map[string]context.CancelFunc
+	// mu is the mutex for the activeProbes map.
+	mu sync.RWMutex
 }
 
 // NewProbeManager creates a new probe manager.
-func NewProbeManager(ch chan<- TelemetryEvent, errChan chan<- error) *ProbeManager {
+// [수정 2] 인자를 받지 않고 내부에서 채널을 생성합니다.
+func NewProbeManager() *ProbeManager {
 	return &ProbeManager{
-		dataChan:     ch,
-		errorChan:    errChan,
+		// Buffer to prevent blocking
+		dataChan:     make(chan TelemetryEvent, 100),
+		errorChan:    make(chan error, 100),
 		registry:     make(map[string]ProbeFactoryFunc),
 		activeProbes: make(map[string]Prober),
 		cancelFuncs:  make(map[string]context.CancelFunc),
 	}
 }
 
+// DataChan getter
+// Returns a read-only channel for the data.
+// It enhances the safety of the data channel.
+func (pm *ProbeManager) DataChan() <-chan TelemetryEvent {
+	return pm.dataChan
+}
+
+// ErrorChan getter
+func (pm *ProbeManager) ErrorChan() <-chan error {
+	return pm.errorChan
+}
+
 // Register registers a new probe.
 func (pm *ProbeManager) Register(name string, factory ProbeFactoryFunc) {
-    // Lock the mutex to prevent race conditions.
-    pm.mu.Lock()
-    defer pm.mu.Unlock()
-    pm.registry[name] = factory
+	pm.mu.Lock()
+	defer pm.mu.Unlock()
+	pm.registry[name] = factory
 }
 
 // Reconcile is the function that reconciles the active probes with the config.
-func (pm *ProbeManager) Reconcile(ctx context.Context, config map[string]bool){
-    // Lock the mutext to prevent race conditions.
-    pm.mu.Lock()
-    defer pm.mu.Unlock()
+func (pm *ProbeManager) Reconcile(ctx context.Context, config map[string]bool) error {
+	pm.mu.Lock()
+	defer pm.mu.Unlock()
 
-    for name, shouldRun := range config {
-        _, isRunning := pm.activeProbes[name]
-        
-        // if the probe is not running and should be run,
-        // start it 
-        if shouldRun && !isRunning {
-            if err := pm.startProbe(ctx, name); err != nil {
-                pm.errorChan <- FailedToStartProbe(name, err)
-            }
-        }
+	for name, shouldRun := range config {
+		_, isRunning := pm.activeProbes[name]
 
-        // if the probe is running and should not be run,
-        // stop it
-        if !shouldRun && isRunning {
-            if err := pm.stopProbe(name); err != nil {
-                pm.errorChan <- FailedToStopProbe(name, err)
-            }
-        }
-   }
+		// Start the probe if it should run but is not running
+		if shouldRun && !isRunning {
+			if err := pm.startProbe(ctx, name); err != nil {
+				// Non-blocking error channel
+				select {
+				case pm.errorChan <- fmt.Errorf("failed to start probe %s: %w", name, err):
+				default:
+					fmt.Printf("Error channel full, dropping start error for %s\n", name)
+				}
+			}
+		}
+
+		// Stop the probe if it is running but should not run
+		if !shouldRun && isRunning {
+			if err := pm.stopProbe(name); err != nil {
+				select {
+				case pm.errorChan <- fmt.Errorf("failed to stop probe %s: %w", name, err):
+				default:
+					fmt.Printf("Error channel full, dropping stop error for %s\n", name)
+				}
+			}
+		}
+	}
+	return nil
 }
 
-// startProbe is the function that starts a probe.
-func (pm *ProbeManager) startProbe(ctx context.Context, name string)error{
-    factory, exists := pm.registry[name]
-    if !exists {
-        // If the probe is not found in the registry, return an error.
-        return ProbeNotFound(name)
-    }
+// startProbe starts a probe. (Called inside Lock)
+func (pm *ProbeManager) startProbe(ctx context.Context, name string) error {
+	factory, exists := pm.registry[name]
+	if !exists {
+		return fmt.Errorf("probe %s not found", name)
+	}
 
-    // When we register a probe, 
-    // create a new instance of the probe.
-    probe := factory()
-    if err := probe.Load(); err != nil {
-        return ProbeLoadFailed(name, err)
-    }
+	probe := factory()
+	if err := probe.Load(); err != nil {
+		return fmt.Errorf("failed to load probe %s: %w", name, err)
+	}
 
-    // Make context that comes from parent context 
-    probeCtx, cancel := context.WithCancel(ctx)
+	// Create a derived context for cancellation
+	probeCtx, cancel := context.WithCancel(ctx)
 
-    pm.cancelFuncs[name] = cancel
-    pm.activeProbes[name] = probe
+	pm.cancelFuncs[name] = cancel
+	pm.activeProbes[name] = probe
 
-    // Each probe runs in its own goroutine.
-    // Send events to the same channel.
-    go func() {
-        defer func() {
-            if r := recover(); r != nil {
-                pm.errorChan <- ProbePanic(name, r)
-            }
-        }()
-        if err := probe.Run(probeCtx, pm.dataChan); err != nil {
-            // report error only if the context is not canceled.
-            if probeCtx.Err() != nil {
-                pm.errorChan <- ProbeContextCanceled(name)
-            }
-        }
-    }()
-    
-    fmt.Printf("probe %s started\n", name)
-    return nil
+	// Each probe runs in its own goroutine
+	go func() {
+		defer func() {
+			if r := recover(); r != nil {
+				select {
+				case pm.errorChan <- fmt.Errorf("probe %s panicked: %v", name, r):
+				default:
+				}
+			}
+		}()
+		
+		if err := probe.Run(probeCtx, pm.dataChan); err != nil {
+			if probeCtx.Err() == nil { // Only report if not canceled intentionally
+				select {
+				case pm.errorChan <- fmt.Errorf("probe %s runtime error: %w", name, err):
+				default:
+				}
+			}
+		}
+	}()
+
+	fmt.Printf("Probe started: %s\n", name)
+	return nil
 }
 
-// stopProbe cloes the probe and removes it from the active probes map.
-func (pm *ProbeManager) stopProbe(name string)error{
-    if cancel, ok := pm.cancelFuncs[name]; ok {
-        cancel()
-        delete(pm.cancelFuncs, name)
-    }
+// stopProbe stops a probe. (Called inside Lock)
+func (pm *ProbeManager) stopProbe(name string) error {
+	// Cancel the context first to stop the Run loop
+	if cancel, ok := pm.cancelFuncs[name]; ok {
+		cancel()
+		delete(pm.cancelFuncs, name)
+	}
 
-    if probe, exists := pm.activeProbes[name]; exists {
-        if err := probe.Close(); err != nil {
-            return FailedToCloseProbe(name, err)
-        }
-
-        delete(pm.activeProbes, name)
-        fmt.Printf("probe %s stopped\n", name)
-    }
-    return nil
+	// Close the probe resources
+	if probe, exists := pm.activeProbes[name]; exists {
+		if err := probe.Close(); err != nil {
+			return err
+		}
+		delete(pm.activeProbes, name)
+		fmt.Printf("Probe stopped: %s\n", name)
+	}
+	return nil
 }
 
-// Shutdown stops all the active probes and shuts down the probe manager.
+// Shutdown stops all active probes.
 func (pm *ProbeManager) Shutdown() {
-    pm.mu.Lock()
-    defer pm.mu.Unlock()
+	pm.mu.Lock()
+	defer pm.mu.Unlock()
 
-    fmt.Printf("Shutting down the probe manager")
-    
-    // Stop all the active probes.
-    for name := range pm.activeProbes {
-        if err := pm.stopProbe(name); err != nil {
-            pm.errorChan <- FailedToStopProbe(name, err)
-        }
-    }
+	fmt.Println("Shutting down ProbeManager...")
+
+	for name := range pm.activeProbes {
+		if err := pm.stopProbe(name); err != nil {
+			fmt.Printf("Failed to stop probe %s during shutdown: %v\n", name, err)
+		}
+	}
+	close(pm.dataChan)
+	close(pm.errorChan)
 }

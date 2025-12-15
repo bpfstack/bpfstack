@@ -80,11 +80,7 @@ func (m *mockProbe) Closed() bool {
 // TestProbeManager_RegisterAndReconcile tests the RegisterAndReconcile method.
 // It tests that the probe is registered and reconciled correctly.
 func TestProbeManager_RegisterAndReconcile(t *testing.T) {
-	// NOTE: Use buffered channels to prevent blocking in tests.
-	dataChan := make(chan TelemetryEvent, 10)
-	errChan := make(chan error, 10)
-
-	pm := NewProbeManager(dataChan, errChan)
+	pm := NewProbeManager()
 
 	var capturedProbe *mockProbe
 	pm.Register("mock_probe", func() Prober {
@@ -99,7 +95,9 @@ func TestProbeManager_RegisterAndReconcile(t *testing.T) {
 
 	t.Log("Step 1: Enabling probe...")
 	config := map[string]bool{"mock_probe": true}
-	pm.Reconcile(ctx, config)
+	if err := pm.Reconcile(ctx, config); err != nil {
+		t.Fatalf("Failed to reconcile: %v", err)
+	}
 
 	// Allow goroutine time to start.
 	time.Sleep(50 * time.Millisecond)
@@ -112,7 +110,7 @@ func TestProbeManager_RegisterAndReconcile(t *testing.T) {
 	}
 
 	select {
-	case event := <-dataChan:
+	case event := <-pm.DataChan():
 		if event.Data != "test-data" {
 			t.Errorf("Expected 'test-data', got %s", event.Data)
 		}
@@ -122,7 +120,9 @@ func TestProbeManager_RegisterAndReconcile(t *testing.T) {
 
 	t.Log("Step 2: Disabling probe...")
 	config["mock_probe"] = false
-	pm.Reconcile(ctx, config)
+	if err := pm.Reconcile(ctx, config); err != nil {
+		t.Fatalf("Failed to reconcile: %v", err)
+	}
 
 	// Allow goroutine time to stop.
 	time.Sleep(50 * time.Millisecond)
@@ -134,9 +134,7 @@ func TestProbeManager_RegisterAndReconcile(t *testing.T) {
 
 func TestProbeManager_Idempotency(t *testing.T) {
 	// Ensure starting an already running probe doesn't crash or restart it
-	dataChan := make(chan TelemetryEvent, 10)
-	errChan := make(chan error, 10)
-	pm := NewProbeManager(dataChan, errChan)
+	pm := NewProbeManager()
 
 	creationCount := 0
 	pm.Register("mock_probe", func() Prober {
@@ -147,11 +145,14 @@ func TestProbeManager_Idempotency(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-
-	pm.Reconcile(ctx, map[string]bool{"mock_probe": true})
+	if err := pm.Reconcile(ctx, map[string]bool{"mock_probe": true}); err != nil {
+		t.Fatalf("Failed to reconcile: %v", err)
+	}
 	time.Sleep(10 * time.Millisecond)
 
-	pm.Reconcile(ctx, map[string]bool{"mock_probe": true})
+	if err := pm.Reconcile(ctx, map[string]bool{"mock_probe": true}); err != nil {
+		t.Fatalf("Failed to reconcile: %v", err)
+	}
 	time.Sleep(10 * time.Millisecond)
 
 	if creationCount != 1 {
@@ -160,9 +161,7 @@ func TestProbeManager_Idempotency(t *testing.T) {
 }
 
 func TestProbeManager_Shutdown(t *testing.T) {
-	dataChan := make(chan TelemetryEvent, 10)
-	errChan := make(chan error, 10)
-	pm := NewProbeManager(dataChan, errChan)
+	pm := NewProbeManager()
 
 	var p1 *mockProbe
 	pm.Register("probe1", func() Prober {
@@ -173,7 +172,9 @@ func TestProbeManager_Shutdown(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	pm.Reconcile(ctx, map[string]bool{"probe1": true})
+	if err := pm.Reconcile(ctx, map[string]bool{"probe1": true}); err != nil {
+		t.Fatalf("Failed to reconcile: %v", err)
+	}
 	time.Sleep(10 * time.Millisecond)
 
 	if !p1.Running() {
