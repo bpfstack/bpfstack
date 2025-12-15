@@ -41,8 +41,15 @@ jobs:
           # if it fails to prevent the linter from stopping).
           bpftool btf dump file /sys/kernel/btf/vmlinux format c > headers/vmlinux.h || echo "// vmlinux.h generation failed" > headers/vmlinux.h
           go generate ./...
+      
+      - name: Generate protobuf files
+        run: |
+          export PATH="$PATH:$(go env GOPATH)/bin"
+          protoc --go_out=. --go_opt=paths=source_relative \
+                 --go-grpc_out=. --go-grpc_opt=paths=source_relative \
+                 api/proto/v1/bpfstack.proto
 
-      # golangci-lint 실행
+      # Run golangci-lint.
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v6
         with:

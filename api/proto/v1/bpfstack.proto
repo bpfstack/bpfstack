@@ -1,0 +1,26 @@
+syntax="proto3";
+
+package v1;
+
+option go_package = "github.com/bpfstack/bpfstack/api/v1";
+
+// Bpfstack is the service that allows the agent to connect to the controller.
+service Bpfstack {
+    // Bidirectional stream of telemetry events.
+    rpc StreamConnect(stream TelemetryEvent) returns (stream Command);
+}
+
+// TelemetryEvent is a event that is sent from the agent to the controller.
+message TelemetryEvent {
+    string agent_id = 1;
+    string probe_name = 2;
+    string data = 3; // JSON encoded data.
+    string timestamp = 4; // Unix timestamp in nanoseconds.
+}
+
+// Command is a command that is sent from the controller to the agent.
+message Command {
+    string probe_name = 1;
+    // Enable or disable the probe.
+    bool enabled = 2;
+}

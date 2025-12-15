@@ -3,11 +3,18 @@ area/agent:
       - any-glob-to-any-file:
           - 'cmd/agent/**'
           - 'pkg/agent/**'
+          - 'internal/agent/**'
+
+area/controller:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'cmd/controller/**'
 
 area/ci:
   - changed-files:
       - any-glob-to-any-file:
           - '.github/**'
+          - '.golangci.yml'
 
 area/test:
   - changed-files:
@@ -19,3 +26,4 @@ area/probe:
   - changed-files:
       - any-glob-to-any-file:
           - 'pkg/probes/**'
+  

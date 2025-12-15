@@ -31,6 +31,7 @@ issues:
     - ".*_bpfel\\.go$"
     - ".*_bpfeb\\.go$"
     - ".*\\.o$"
+    - ".*\\.pb\\.go$"
 
   exclude-rules:    
     - path: _test\.go
