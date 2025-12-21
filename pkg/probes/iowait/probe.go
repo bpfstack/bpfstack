@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/bpfstack/bpfstack/pkg/agent/core"
+	"github.com/bpfstack/bpfstack/pkg/probes/common"
 	"github.com/cilium/ebpf/link"
 )
 
@@ -24,18 +25,22 @@ type ProcessStats struct {
 
 // Probe is the probe for collecting iowait statistics.
 type Probe struct {
-	objs *iowaitObjects
-	link link.Link
+    common.CommonProbe
+    // objs is the eBPF objects.
+    objs *iowaitObjects
+    // link is the link to the tracing program.
+    link link.Link
 }
 
 // New creates a new Probe instance.
 func New() core.Prober {
-	return &Probe{}
-}
-
-// Name returns the name of the probe.
-func (p *Probe) Name() string {
-	return "iowait_top5"
+	return &Probe{
+		CommonProbe: common.CommonProbe{
+			Name: "iowait_top5",
+			Description: "Collects the top 5 processes by IO wait time.",
+			Version: "1.0.0",
+		},
+	}
 }
 
 // Load loads the eBPF objects and attaches the tracing program.
