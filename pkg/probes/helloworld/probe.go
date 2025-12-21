@@ -6,19 +6,23 @@ import (
 	"time"
 
 	"github.com/bpfstack/bpfstack/pkg/agent/core"
+	"github.com/bpfstack/bpfstack/pkg/probes/common"
 )
 
 // Probe is a test implementation of the Prober interface.
-type Probe struct {}
+type Probe struct {
+	common.CommonProbe
+}
 
 // New is a test implementation of the New method.
 func New() core.Prober {
-    return &Probe{}
-}
-
-// Name is a test implementation of the Name method.
-func (p *Probe) Name() string {
-    return "helloworld"
+    return &Probe{
+        CommonProbe: common.CommonProbe{
+            Name: "helloworld",
+            Description: "A test probe that sends a 'helloworld!!!' message every 10 seconds.",
+            Version: "1.0.0",
+        },
+    }
 }
 
 // Load is a test implementation of the Load method.

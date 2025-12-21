@@ -16,10 +16,12 @@ import (
 	"github.com/cilium/ebpf/ringbuf"
 	"github.com/cilium/ebpf/rlimit"
 	"github.com/bpfstack/bpfstack/pkg/agent/core"
+	"github.com/bpfstack/bpfstack/pkg/probes/common"
 )
 
 // Probe is a probe that monitors file opens.
 type Probe struct {
+    common.CommonProbe
     // objs is the eBPF objects.
     objs fileopenObjects
     // link is the link to the eBPF program.
@@ -30,12 +32,13 @@ type Probe struct {
 
 // New is a test implementation of the New method.
 func New() core.Prober {
-    return &Probe{}
-}
-
-// Name returns the name of the probe.
-func (p *Probe) Name() string {
-    return "fileopen"
+    return &Probe{
+        CommonProbe: common.CommonProbe{
+            Name: "fileopen",
+            Description: "Monitors file opens.",
+            Version: "1.0.0",
+        },
+    }
 }
 
 // Load loads the eBPF program about file opens.
