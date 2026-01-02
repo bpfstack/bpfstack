@@ -17,7 +17,7 @@ import (
 func main() {
 	// Check if the agent is running as root.
 	if os.Geteuid() != 0 {
-		log.Fatal("Error: This agent must be run as root (sudo).")
+		log.Printf("Warning: Agent is not running as root. Ensure adequate capabilities (CAP_BPF, etc.) are set.")
 	}
 
 	// Parse the command line flags.

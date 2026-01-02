@@ -13,8 +13,8 @@ type ProbeFactoryFunc func() Prober
 // ProbeManager is the manager for the probes.
 type ProbeManager struct {
 	// dataChan is double-buffered channels for data
-	dataChan  chan TelemetryEvent
-    // errorChan is double-buffered channels for errors.
+	dataChan chan TelemetryEvent
+	// errorChan is double-buffered channels for errors.
 	errorChan chan error
 	// registry is the collection of available probes.
 	registry map[string]ProbeFactoryFunc
@@ -24,6 +24,8 @@ type ProbeManager struct {
 	cancelFuncs map[string]context.CancelFunc
 	// mu is the mutex for the activeProbes map.
 	mu sync.RWMutex
+	// wg is the wait group for the active probes.
+	wg sync.WaitGroup
 }
 
 // NewProbeManager creates a new probe manager.
@@ -110,8 +112,10 @@ func (pm *ProbeManager) startProbe(ctx context.Context, name string) error {
 	pm.cancelFuncs[name] = cancel
 	pm.activeProbes[name] = probe
 
+	pm.wg.Add(1)
 	// Each probe runs in its own goroutine
 	go func() {
+		defer pm.wg.Done()
 		defer func() {
 			if r := recover(); r != nil {
 				select {
@@ -120,7 +124,7 @@ func (pm *ProbeManager) startProbe(ctx context.Context, name string) error {
 				}
 			}
 		}()
-		
+
 		if err := probe.Run(probeCtx, pm.dataChan); err != nil {
 			if probeCtx.Err() == nil { // Only report if not canceled intentionally
 				select {
@@ -157,8 +161,6 @@ func (pm *ProbeManager) stopProbe(name string) error {
 // Shutdown stops all active probes.
 func (pm *ProbeManager) Shutdown() {
 	pm.mu.Lock()
-	defer pm.mu.Unlock()
-
 	fmt.Println("Shutting down ProbeManager...")
 
 	for name := range pm.activeProbes {
@@ -166,6 +168,11 @@ func (pm *ProbeManager) Shutdown() {
 			fmt.Printf("Failed to stop probe %s during shutdown: %v\n", name, err)
 		}
 	}
+	pm.mu.Unlock() // Unlock enable goroutines to finish if they need the lock (unlikely but safe)
+
+	// Wait for all probes to finish
+	pm.wg.Wait()
+
 	close(pm.dataChan)
 	close(pm.errorChan)
 }
