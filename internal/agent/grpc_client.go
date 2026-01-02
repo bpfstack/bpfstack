@@ -15,14 +15,14 @@ import (
 
 // Client is the client for the agent.
 type Client struct {
-    // serverAddr is the address of the controller.
+	// serverAddr is the address of the controller.
 	serverAddr string
-    // agentID is the ID of the agent.
-	agentID    string
-    // probeMgr is the manager for the probes.
-	probeMgr   *core.ProbeManager
-    // config is the configuration for the agent.
-	config     map[string]bool
+	// agentID is the ID of the agent.
+	agentID string
+	// probeMgr is the manager for the probes.
+	probeMgr *core.ProbeManager
+	// config is the configuration for the agent.
+	config map[string]bool
 }
 
 // NewClient creates a new agent client.
@@ -85,7 +85,7 @@ func (c *Client) Start(ctx context.Context) error {
 		fmt.Printf("[Command Received] Probe: %s, Enabled: %v\n", cmd.ProbeName, cmd.Enabled)
 
 		c.config[cmd.ProbeName] = cmd.Enabled
-		// The Reconcile function will start or stop the probes 
+		// The Reconcile function will start or stop the probes
 		// based on the configuration.
 		if err := c.probeMgr.Reconcile(ctx, c.config); err != nil {
 			log.Printf("Failed to reconcile probes: %v", err)

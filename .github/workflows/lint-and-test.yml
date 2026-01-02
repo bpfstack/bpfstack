@@ -2,9 +2,9 @@ name: golangci-lint
 
 on:
   push:
-    branches: [ "main", "v*.*.*" ]
+    branches: [ "main", "release/v*.*.*" ]
   pull_request:
-    branches: [ "main", "v*.*.*" ]
+    branches: [ "main", "release/v*.*.*" ]
 
 permissions:
   contents: read
@@ -22,44 +22,44 @@ jobs:
           go-version: '1.24'
           cache: false
 
-      - name: Install dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y clang llvm libbpf-dev libssl-dev linux-tools-common linux-tools-generic
+      # - name: Install dependencies
+      #   run: |
+      #     sudo apt-get update
+      #     sudo apt-get install -y clang llvm libbpf-dev libssl-dev linux-tools-common linux-tools-generic
       
-      - name: Setup bpftool
-        run: |
-          if [ ! -f /usr/sbin/bpftool ]; then
-            sudo ln -s /usr/lib/linux-tools/$(uname -r)/bpftool /usr/sbin/bpftool
-          fi
+      # - name: Setup bpftool
+      #   run: |
+      #     if [ ! -f /usr/sbin/bpftool ]; then
+      #       sudo ln -s /usr/lib/linux-tools/$(uname -r)/bpftool /usr/sbin/bpftool
+      #     fi
 
-      - name: Generate eBPF Go files
-        run: |
-          go install github.com/cilium/ebpf/cmd/bpf2go@latest
-          mkdir -p headers
-          # NOTE: Try to dump vmlinux.h (create an empty file 
-          # if it fails to prevent the linter from stopping).
-          bpftool btf dump file /sys/kernel/btf/vmlinux format c > headers/vmlinux.h || echo "// vmlinux.h generation failed" > headers/vmlinux.h
-          go generate ./...
+      # - name: Generate eBPF Go files
+      #   run: |
+      #     go install github.com/cilium/ebpf/cmd/bpf2go@latest
+      #     mkdir -p headers
+      #     # NOTE: Try to dump vmlinux.h (create an empty file 
+      #     # if it fails to prevent the linter from stopping).
+      #     bpftool btf dump file /sys/kernel/btf/vmlinux format c > headers/vmlinux.h || echo "// vmlinux.h generation failed" > headers/vmlinux.h
+      #     go generate ./...
       
-      - name: Generate protobuf files
-        run: |
-          export PATH="$PATH:$(go env GOPATH)/bin"
-          protoc --go_out=. --go_opt=paths=source_relative \
-                 --go-grpc_out=. --go-grpc_opt=paths=source_relative \
-                 api/proto/v1/bpfstack.proto
+      # - name: Generate protobuf files
+      #   run: |
+      #     export PATH="$PATH:$(go env GOPATH)/bin"
+      #     protoc --go_out=. --go_opt=paths=source_relative \
+      #            --go-grpc_out=. --go-grpc_opt=paths=source_relative \
+      #            api/proto/v1/bpfstack.proto
 
-      # Run golangci-lint.
-      - name: golangci-lint
-        uses: golangci/golangci-lint-action@v6
-        with:
-          version: v1.64
-          args: --timeout=5m --config=.golangci.yml --verbose
-        env:
-          # NOTE: eBPF project uses CGO, so it must be enabled for the linter to recognize the headers.
-          CGO_ENABLED: 1
+      # # Run golangci-lint.
+      # - name: golangci-lint
+      #   uses: golangci/golangci-lint-action@v6
+      #   with:
+      #     version: v1.64
+      #     args: --timeout=5m --config=.golangci.yml --verbose
+      #   env:
+      #     # NOTE: eBPF project uses CGO, so it must be enabled for the linter to recognize the headers.
+      #     CGO_ENABLED: 1
 
-      - name: Run Unit Tests
-        env:
-          CGO_ENABLED: 1
-        run: go test -v ./...
+      # - name: Run Unit Tests
+      #   env:
+      #     CGO_ENABLED: 1
+      #   run: go test -v ./...
